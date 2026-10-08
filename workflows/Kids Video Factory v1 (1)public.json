@@ -1,0 +1,327 @@
+{
+  "name": "Kids Video Factory v1",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8a64bb8c-0139-40f7-97cb-80b5265ed5aa",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "modelId": "GigaChat-2-Pro",
+        "prompt": "اكتب الحلقة الأولى من سلسلة \"نور وروبوت الألوان\". الهدف التعليمي هو تعليم الألوان الأساسية (الأحمر، الأزرق، الأصفر). الشخصيات هي: نور (طفلة فضولية)، زي (روبوت لطيف)، وميمي (قطة بيضاء). المكان هو مدينة \"ألوانيا\" الخيالية.",
+        "options": {
+          "systemMessage": "أنت كاتب سيناريو محترف لبرامج الأطفال التعليمية على يوتيوب. مهمتك هي كتابة سيناريو حلقة كاملة لسلسلة كرتونية. يجب أن يكون السيناريو باللغة العربية الفصحى المبسطة، ومناسباً للأطفال من عمر 3 إلى 6 سنوات. يجب أن تتضمن مخرجاتك: 1. عنوان الحلقة. 2. قائمة بالشخصيات والمكان. 3. تقسيم الحلقة إلى 6 مشاهد. 4. لكل مشهد: وصف بصري، الحوار أو التعليق الصوتي، ومدة مقترحة بالثواني. 5. أخرج النتيجة النهائية بصيغة JSON منظمة."
+        }
+      },
+      "type": "n8n-nodes-gigachat.gigaChat",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2e6fd1db-156b-4138-aba3-a15f2d1fc253",
+      "name": "GigaChat",
+      "credentials": {
+        "gigaChatApi": {
+          "id": "EsPbc9xdDw092j8z",
+          "name": "GigaChat account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// استخراج نص الاستجابة من GigaChat\nconst responseText = $input.first().json.response || $input.first().json.content || JSON.stringify($input.first().json);\n\n// إزالة علامات ```json و ```\nlet cleanText = responseText\n  .replace(/```json\\s*/g, '')\n  .replace(/```\\s*/g, '')\n  .trim();\n\n// محاولة تحليل JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(cleanText);\n} catch (e) {\n  // إذا فشل التحليل، حاول استخراج أول { ... } صالح\n  const match = cleanText.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    try {\n      parsed = JSON.parse(match[0]);\n    } catch (e2) {\n      return [{ json: { error: 'JSON parsing failed', raw: cleanText } }];\n    }\n  } else {\n    return [{ json: { error: 'No JSON found', raw: cleanText } }];\n  }\n}\n\n// إرجاع النتيجة\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "d4abf7e6-9f35-4055-b65b-df6f8c605cfb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst scenes = data[\"مشاهد الحلقة\"] || data.scenes || [];\n\nif (!Array.isArray(scenes) || scenes.length === 0) {\n  return [{ json: { error: 'No scenes found', data } }];\n}\n\nreturn scenes.map((scene, index) => ({\n  json: {\n    sceneNumber: scene[\"رقم المشهد\"] || index + 1,\n    visual: scene[\"وصف البصري\"] || scene[\"visual\"] || \"\",\n    dialogue: scene[\"الحوار والتعليق الصوتي\"] || scene[\"dialogue\"] || \"\",\n    duration: scene[\"مدة المقترح\"] || scene[\"duration\"] || \"10 ثواني\",\n    title: data[\"عنوان الحلقة\"] || \"\",\n    characters: data[\"الشخصيات\"] || [],\n    place: data[\"المكان\"] || \"\"\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -112
+      ],
+      "id": "d6964a0f-5c25-4f8b-a3bf-85543156aa26",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "modelId": "GigaChat-3-Lightning",
+        "prompt": "=Scene: {{ $json.visual }}\nDialogue: {{ $json.dialogue }}\nDuration: {{ $json.duration }}\n\nConvert this scene into a detailed English video generation prompt.",
+        "options": {
+          "systemMessage": "You are a professional AI video prompt engineer for children's 3D animated cartoons. Your job is to convert Arabic scene descriptions into detailed English video generation prompts.\n\nRules:\n- Output ONLY the English prompt, no explanations.\n- Style: 3D animated children's cartoon, bright cheerful colors, soft lighting, Pixar-like but simpler.\n- Include: character descriptions, action, camera movement, background, mood.\n- Duration: 5-8 seconds per shot.\n- Never include scary elements, violence, or text on screen.\n- Always mention: safe, playful, educational, for kids."
+        }
+      },
+      "type": "n8n-nodes-gigachat.gigaChat",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -112
+      ],
+      "id": "67fc96dc-6d8f-4b91-acf4-ffa523ccae91",
+      "name": "GigaChat1",
+      "credentials": {
+        "gigaChatApi": {
+          "id": "EsPbc9xdDw092j8z",
+          "name": "GigaChat account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apihub.agnes-ai.com/v1/videos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer your_API"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"agnes-video-2.5-flash\",\n  \"prompt\": \"{{ $json.response }}\",\n  \"seconds\": \"5\",\n  \"mode\": \"text\",\n  \"size\": \"720P\",\n  \"aspect_ratio\": \"16:9\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1488,
+        -160
+      ],
+      "id": "d2f9461d-435a-4583-815b-f6cc9c85970f",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        128
+      ],
+      "id": "08102dac-0f65-4b98-b0f8-bfb01b5fa8ce",
+      "name": "Wait",
+      "webhookId": "348cfd2d-3b1c-4f63-8844-0437047053f8"
+    },
+    {
+      "parameters": {
+        "url": "https://api.magichour.ai/v1/video-projects/cmuyxsxda01oeob01273e91fw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer your_ Authorization_code"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        128
+      ],
+      "id": "fde2d859-8ca6-4a19-9c18-57288cfdc94c",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.magichour.ai/v1/text-to-video",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer your_Authorization_code"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"My Video\",\n  \"end_seconds\": 5,\n  \"orientation\": \"landscape\",\n  \"resolution\": \"480p\",\n  \"model\": \"ltx-2.5\",\n  \"style\": {\n    \"prompt\": \"{{ $json.response }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1344,
+        48
+      ],
+      "id": "1930b914-5115-4ab9-8bf8-17819de961f4",
+      "name": "Create Video",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\n// محاولة إيجاد رابط الفيديو من حقول مختلفة\nlet videoUrl = null;\n\nif (data.downloads && data.downloads.url) {\n  videoUrl = data.downloads.url;\n} else if (data.download && data.download.url) {\n  videoUrl = data.download.url;\n} else if (data.url) {\n  videoUrl = data.url;\n}\n\nreturn [{\n  json: {\n    videoUrl: videoUrl,\n    status: data.status,\n    id: data.id,\n    width: data.width,\n    height: data.height,\n    endSeconds: data.end_seconds,\n    creditsCharged: data.credits_charged,\n    rawData: data\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        128
+      ],
+      "id": "fcbf962a-e846-43a4-a4d8-92f8d01dd305",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2448,
+        128
+      ],
+      "id": "39083793-f067-4f04-8b1e-4d311ad5d75f",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GigaChat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GigaChat": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "GigaChat1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GigaChat1": {
+      "main": [
+        [
+          {
+            "node": "Create Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "325ab506-0929-43ae-b67c-74487287463a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c45817598faa7d332c340d62220952a39f0eb0a99202dd6533d9d030b891cb7"
+  },
+  "nodeGroups": [],
+  "id": "KP1wOpOrTSzQGRDY",
+  "tags": []
+}
