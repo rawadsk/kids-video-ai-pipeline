@@ -169,8 +169,9 @@ Through this project, I gained practical experience in:
 
 **Rawad Amir Skef**
 
-- GitHub: [@YOUR_USERNAME](https://github.com/YOUR_USERNAME)
-- LinkedIn: [Your Profile](https://linkedin.com/in/YOUR_PROFILE)
+- GitHub: [@rawadsk](https://github.com/rawadsk)
+
+  
 - Email: rskef@mail.ru
 - Telegram: [@Rawad138](https://t.me/Rawad138)
 
