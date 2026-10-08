@@ -1,0 +1,205 @@
+{
+  "name": "ai agent for creat kids videos",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "dd863ac7-7695-4636-8429-ddf7146088c2",
+      "name": "When chat message received",
+      "webhookId": "77a4c749-137c-4214-be19-19dedd549ee7"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json }}{{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "أنت وكيل ذكاء اصطناعي متخصص في إنشاء حلقات كرتونية تعليمية للأطفال من عمر 3 إلى 6 سنوات.\n\nعندما يطلب منك المستخدم إنشاء حلقة عن موضوع معين:\n1. استخدم أداة \"Script Generator\" لتوليد السيناريو الكامل.\n2. اعرض على المستخدم عنوان الحلقة وملخص المشاهد.\n3. اسأل إذا كان يريد المتابعة لتوليد الفيديو.\n\nتحدث بالعربية دائماً، وكن مبدعاً وودوداً."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "85704e74-ca40-4d12-a2da-d2ce4996c885",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "GigaChat-3-Pro",
+        "options": {}
+      },
+      "type": "n8n-nodes-gigachat.lmGigaChat",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "7723809a-a51b-4fc3-8f1b-3dca414ab021",
+      "name": "GigaChat Model",
+      "credentials": {
+        "gigaChatApi": {
+          "id": "EsPbc9xdDw092j8z",
+          "name": "GigaChat account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "RqUID",
+              "value": "6f0b1291-c7f3-43c6-bb2e-9f3efb2dc98e"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic YOUR_GIGACHAT_AUTH_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "scope",
+              "value": "GIGACHAT_API_PERS"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "26746c0f-295d-44e4-9fec-b25b0153a659",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to generate a complete Arabic cartoon script for children aged 3-6. Input: the episode topic (such as colors, numbers, animals). Output: JSON with title, characters, place, and 6 scenes.",
+        "workflowId": {
+          "__rl": true,
+          "value": "0u4sRPyNVSjjqMKY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0u4sRPyNVSjjqMKY",
+          "cachedResultName": "Script Generator Sub-workflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "topic": "={{ $fromAI('topic', 'The topic of the children cartoon episode') }}"
+          },
+          "matchingColumns": [
+            "topic"
+          ],
+          "schema": [
+            {
+              "id": "topic",
+              "displayName": "topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        208
+      ],
+      "id": "c4f9d256-6094-4814-9a62-752fac301429",
+      "name": "Call 'Script Generator Sub-workflow'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GigaChat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Script Generator Sub-workflow'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "748071dd-7d07-4379-860a-bc83e6e517a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c45817598faa7d332c340d62220952a39f0eb0a99202dd6533d9d030b891cb7"
+  },
+  "nodeGroups": [],
+  "id": "CxRVD3c76ySklmVj",
+  "tags": []
+}

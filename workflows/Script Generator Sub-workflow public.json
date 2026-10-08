@@ -1,0 +1,138 @@
+{
+  "name": "Script Generator Sub-workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "topic"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "97951bef-342b-4194-836b-33a39f5f0cee",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "RqUID",
+              "value": "6f0b1291-c7f3-43c6-bb2e-9f3efb2dc98e"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic YOUR_GIGACHAT_AUTH_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "scope",
+              "value": "GIGACHAT_API_PERS"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "cef71eda-3fb2-407f-838e-6656041333ed",
+      "name": "Get Access Token"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.giga.chat/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Access Token').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"GigaChat-2-Pro\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"أنت كاتب سيناريو محترف لبرامج الأطفال التعليمية على يوتيوب. مهمتك هي كتابة سيناريو حلقة كاملة لسلسلة كرتونية. يجب أن يكون السيناريو باللغة العربية الفصحى المبسطة، ومناسباً للأطفال من عمر 3 إلى 6 سنوات. يجب أن تتضمن مخرجاتك: 1. عنوان الحلقة. 2. قائمة بالشخصيات والمكان. 3. تقسيم الحلقة إلى 6 مشاهد. 4. لكل مشهد: وصف بصري، الحوار أو التعليق الصوتي، ومدة مقترحة بالثواني. 5. أخرج النتيجة النهائية بصيغة JSON منظمة.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.topic }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "621063cf-bec0-45cc-bd60-950efe008f20",
+      "name": "Generate Script"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Access Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Access Token": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ce7185fb-8322-42a8-b136-7cd42dbb1ef2",
+  "meta": {
+    "instanceId": "2c45817598faa7d332c340d62220952a39f0eb0a99202dd6533d9d030b891cb7"
+  },
+  "nodeGroups": [],
+  "id": "0u4sRPyNVSjjqMKY",
+  "tags": []
+}
